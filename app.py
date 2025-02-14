@@ -1,5 +1,5 @@
 import os
-import streamlit as st
+import gradio as gr
 import whisper
 from deep_translator import GoogleTranslator
 from gtts import gTTS
@@ -51,32 +51,33 @@ def process_audio(audio_file, target_language):
 
     return transcription, translated_text, translated_audio
 
-# Streamlit UI
-st.title("🎙️ Speech to Text & Translator 🌍")
-st.write("Upload an audio file, select a language, and get transcription + translation + translated audio.")
+# Gradio Interface
+def gradio_interface(audio_file, target_language):
+    if audio_file is None:
+        return "⚠️ Please upload an audio file.", "", None
 
-uploaded_audio = st.file_uploader("📂 Upload an MP3/WAV file", type=["mp3", "wav"])
-target_language = st.selectbox("🌍 Select Translation Language", list(LANGUAGE_CODES.keys()))
+    transcription, translated_text, translated_audio = process_audio(audio_file, target_language)
+    return transcription, translated_text, translated_audio
 
-if st.button("Process Audio"):
-    if uploaded_audio is not None:
-        # Save uploaded file temporarily
-        with open("temp_audio.mp3", "wb") as f:
-            f.write(uploaded_audio.read())
+# Gradio UI
+input_components = [
+    gr.Audio(type="filepath", label="📂 Upload an MP3/WAV file"),
+    gr.Dropdown(choices=list(LANGUAGE_CODES.keys()), label="🌍 Select Translation Language")
+]
 
-        # Process the audio file
-        transcription, translated_text, translated_audio = process_audio("temp_audio.mp3", target_language)
+output_components = [
+    gr.Textbox(label="📝 Transcription (English)"),
+    gr.Textbox(label="🌎 Translation"),
+    gr.Audio(label="🎧 Translated Audio", type="filepath")
+]
 
-        # Display Results
-        st.subheader("📝 Transcription (English)")
-        st.write(transcription)
+interface = gr.Interface(
+    fn=gradio_interface,
+    inputs=input_components,
+    outputs=output_components,
+    title="🎙️ Speech to Text & Translator 🌍",
+    description="Upload an audio file, select a language, and get transcription + translation + translated audio."
+)
 
-        st.subheader("🌎 Translation")
-        st.write(translated_text)
-
-        st.subheader("🎧 Translated Audio")
-        if translated_audio:
-            st.audio(translated_audio)
-    else:
-        st.warning("⚠️ Please upload an audio file.")
- 
+# Launch Gradio App
+interface.launch(share=True)
