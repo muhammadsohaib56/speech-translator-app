@@ -1,0 +1,5 @@
+whisper
+streamlit
+deep-translator
+gtts
+torch
